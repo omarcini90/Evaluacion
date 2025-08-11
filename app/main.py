@@ -7,39 +7,18 @@ from app.router.router import router as verification_router
 
 
 # Crear la aplicación FastAPI
-app = FastAPI(
-    title="Microservicio de Verificación de Lista Negra",
-    description="""
-    Microservicio REST para verificar si una persona se encuentra en una lista negra.
-    
-    ## Características
-    
-    * **Autenticación JWT**: Todas las operaciones requieren autenticación Bearer Token
-    * **Verificación de personas**: Consulta si una persona está en la lista negra
-    * **Base de datos PostgreSQL**: Almacenamiento persistente de la lista negra
-    * **Documentación automática**: OpenAPI/Swagger integrado
-    
-    ## Autenticación
-    
-    Para usar este API, necesitas incluir un token JWT en el header:
-    ```
-    Authorization: Bearer tu_token_aqui
-    ```
-    
-    Para pruebas, puedes usar este token hardcodeado:
-    ```
-    eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJzdWIiOiJ0ZXN0X3VzZXIiLCJleHAiOjk5OTk5OTk5OTl9.Jz8n5r7Y5oU8i6A2cX4l8N3vB9u1K6t3R7yW5qE8zF2
-    ```
-    """,
-    version="1.0.0",
-    contact={
-        "name": "Equipo de Desarrollo",
-        "email": "dev@empresa.com",
-    },
-    license_info={
-        "name": "MIT",
-    },
-)
+import yaml
+from fastapi.openapi.utils import get_openapi
+from fastapi.openapi.docs import get_swagger_ui_html, get_redoc_html
+from fastapi.responses import FileResponse, HTMLResponse
+import os
+
+# Cargar el OpenAPI YAML externo
+OPENAPI_YAML_PATH = os.path.join(os.path.dirname(os.path.dirname(__file__)), "openapi.yaml")
+with open(OPENAPI_YAML_PATH, "r", encoding="utf-8") as f:
+    openapi_spec = yaml.safe_load(f)
+
+app = FastAPI(openapi_url=None, docs_url=None, redoc_url=None)
 
 # Configurar CORS
 app.add_middleware(
@@ -49,6 +28,27 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+# Sobrescribir el esquema OpenAPI con el YAML externo
+@app.get("/openapi.json", include_in_schema=False)
+async def custom_openapi():
+    return openapi_spec
+
+# Swagger UI personalizado
+@app.get("/docs", include_in_schema=False)
+async def custom_swagger_ui():
+    return get_swagger_ui_html(
+        openapi_url="/openapi.json",
+        title="Documentación - Microservicio de Verificación de Lista Negra"
+    )
+
+# Redoc personalizado
+@app.get("/redoc", include_in_schema=False)
+async def custom_redoc():
+    return get_redoc_html(
+        openapi_url="/openapi.json",
+        title="Documentación Redoc - Microservicio de Verificación de Lista Negra"
+    )
 
 # Incluir routers
 app.include_router(verification_router)

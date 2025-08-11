@@ -1,0 +1,149 @@
+
+openapi: 3.0.3
+info:
+  title: Microservicio de Verificación de Personas en Lista Negra
+  version: 1.0.0
+  description: |
+    Permite consultar si una persona está en una lista negra y cargar nombres de forma masiva. Requiere autenticación JWT.
+servers:
+  - url: http://localhost:8000
+paths:
+  /verificar:
+    post:
+      summary: Verificar persona
+      description: Consulta si el nombre proporcionado está en la lista negra.
+      tags:
+        - Verificación
+      security:
+        - BearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VerificarPersonaRequest'
+      responses:
+        '200':
+          description: Indica si la persona está en la lista negra
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VerificarPersonaResponse'
+        '400':
+          description: Datos inválidos
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Token no válido
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /cargar_nombres_iniciales:
+    post:
+      summary: Cargar nombres
+      description: Agrega una lista de nombres a la lista negra.
+      tags:
+        - Carga
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                type: string
+      responses:
+        '201':
+          description: Nombres agregados correctamente
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+        '400':
+          description: No se recibieron nombres
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '500':
+          description: Error interno
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+  /health:
+    get:
+      summary: Estado del servicio
+      tags:
+        - Utilidad
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                  service:
+                    type: string
+  /:
+    get:
+      summary: Información del servicio
+      tags:
+        - Utilidad
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                  version:
+                    type: string
+                  docs:
+                    type: string
+                  health:
+                    type: string
+components:
+  securitySchemes:
+    BearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+  schemas:
+    VerificarPersonaRequest:
+      type: object
+      properties:
+        nombre_completo:
+          type: string
+          example: Juan Pérez González
+      required:
+        - nombre_completo
+    VerificarPersonaResponse:
+      type: object
+      properties:
+        encontrado:
+          type: boolean
+          example: true
+    ErrorResponse:
+      type: object
+      properties:
+        detail:
+          type: string
